@@ -7,7 +7,7 @@ Parameters:
   OpenSearchInstanceType:
     Description: Instance type of the opensearch domain
     Type: String
-    Default: 'm3.medium.elasticsearch'
+    Default: 't3.small.search'
 Resources:
   OpensearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
@@ -23,7 +23,7 @@ Resources:
         EBSEnabled: 'true'
         Iops: 0
         VolumeSize: 10
-        VolumeType: standard
+        VolumeType: gp2
       SnapshotOptions:
         AutomatedSnapshotStartHour: '0'
       AccessPolicies:
