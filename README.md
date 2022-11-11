@@ -6,11 +6,9 @@ This repository aims at building a prototyping machine learning (ML) powered sea
 
 ### <ins> Background </ins>
 
-This repository is the implementation of the blog [Use Amazon SageMaker and Amazon OpenSearch Service to implement unified text and image search with a CLIP model](TBD).
-
 Embedding-based retrieval(EBR) is well used in search and recommendation systems. It uses nearest (approximate) neighbour search algorithms to find similar or closely related items from an embedding store (also known as a vector database). Classic search mechanisms depend heavily on key-word matching and ignore the lexical meaning or query’s context. The goal of EBR is to provide users with the ability to find the most relevant products using free text. It is popular because compared with key-word matching it leverages semantic concepts in retrieval process. 
 
-In this post, we focus on building a prototyping machine learning (ML) powered search engine to retrieve and recommend products based on text or image queries. This uses the Amazon OpenSearch Service and its k-nearest neighbors (KNN) functionality, as well as  Amazon SageMaker and its serverless inference feature. Amazon SageMaker is a fully managed service that provides every developer and data scientist with the ability to build, train, and deploy ML models for any use case with fully managed infrastructure, tools, and workflows. Amazon OpenSearch Service is a fully managed service that makes it easy to perform interactive log analytics, real-time application monitoring, website search, and more.
+In this repo, we focus on building a prototyping machine learning (ML) powered search engine to retrieve and recommend products based on text or image queries. This uses the Amazon OpenSearch Service and its k-nearest neighbors (KNN) functionality, as well as Amazon SageMaker and its serverless inference feature. Amazon SageMaker is a fully managed service that provides every developer and data scientist with the ability to build, train, and deploy ML models for any use case with fully managed infrastructure, tools, and workflows. Amazon OpenSearch Service is a fully managed service that makes it easy to perform interactive log analytics, real-time application monitoring, website search, and more.
 
 Contrastive Language-Image Pre-Training (CLIP) is a neural network trained on a variety of image and text pairs. The CLIP neural network(s) is able to project both images and text into the same latent space, which means that they can be compared using a similarity measure, such as cosine similarity. 
 You can use CLIP to encode your products’ images or description into embeddings, and then store them into a vector database. Then your customers can perform query in the database to retrieve products that they may have interest. To query the database, your customers need to provide input images or text, and then the input will be encoded with CLIP before sending to the vector database for KNN search. 
@@ -42,7 +40,7 @@ The solution uses the following AWS services and features:
 
 1.  Open [SageMaker Studio](https://docs.aws.amazon.com/sagemaker/latest/dg/studio.html). This can be done for existing users or while creating new ones. For a detailed how-to set up SageMaker Studio go [here](https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-quick-start.html).
 2. Create an [Amazon S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html). All the files generated in this example solution are stored in S3.
-3. Set up an [OpenSearch service cluster](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html). For instructions, see Creating and Managing Amazon OpenSearch Service Domains. 
+3. Set up an [OpenSearch service cluster](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html). For instructions, see Creating and Managing Amazon OpenSearch Service Domains. You can also use the [CloudFormation template](./opensearch.yml) provided within the Git repository.
 
 #### II. Run the workflow
 
