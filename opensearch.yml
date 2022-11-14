@@ -40,37 +40,7 @@ Resources:
         - Key: Name
           Value: 
             Ref: DomainName
-      VPCOptions:
-        SubnetIds:
-          - Ref: subnet
-        SecurityGroupIds:
-          - Ref: mySecurityGroup
-  vpc:
-    Type: 'AWS::EC2::VPC'
-    Properties:
-      CidrBlock: 10.0.0.0/16
-  subnet:
-    Type: 'AWS::EC2::Subnet'
-    Properties:
-      VpcId:
-        Ref: vpc
-      CidrBlock: '10.0.0.0/20'
-      AvailabilityZone: 
-        Fn::Select: 
-          - 0
-          - Fn::GetAZs: ""
-  mySecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: "Allow access to ES"
-      VpcId:
-        Ref: vpc
-      GroupName: "search-cluster"
-      SecurityGroupIngress:
-        - FromPort: '443'
-          IpProtocol: tcp
-          ToPort: '443'
-          CidrIp: 0.0.0.0/0
+
 Outputs:
   DomainArn:
     Value:
@@ -82,9 +52,3 @@ Outputs:
       'Fn::GetAtt':
         - OpensearchDomain
         - DomainEndpoint
-  SecurityGroupId:
-    Value:
-      Ref: mySecurityGroup
-  SubnetId:
-    Value:
-      Ref: subnet
