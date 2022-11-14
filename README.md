@@ -52,7 +52,7 @@ The solution uses the following AWS services and features:
         "AWS": "<sagemaker-studio-execution-role-arn>"
       },
       "Action": "es:*",
-      "Resource": "arn:aws:es:ap-southeast-2:451660370552:domain/<opensearch-domain-name>/*"
+      "Resource": "arn:aws:es:<your-region>:<your-account>:domain/<opensearch-domain-name>/*"
     }
   ]
 }
