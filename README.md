@@ -41,7 +41,7 @@ The solution uses the following AWS services and features:
 1.  Open [SageMaker Studio](https://docs.aws.amazon.com/sagemaker/latest/dg/studio.html). This can be done for existing users or while creating new ones. For a detailed how-to set up SageMaker Studio go [here](https://docs.aws.amazon.com/sagemaker/latest/dg/onboard-quick-start.html).
 2. Create an [Amazon S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html). All the files generated in this example solution are stored in S3.
 3. Set up an [OpenSearch service cluster](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html). For instructions, see Creating and Managing Amazon OpenSearch Service Domains. You can also use the [CloudFormation template](./opensearch.yml) provided within the Git repository. Before deploying the CloudFormation template, you need to create service-linked role by running `aws iam create-service-linked-role --aws-service-name es.amazonaws.com` in your AWS account.
-4. Ensure the SaeMaker Studio Execution role can access your OpenSearch Service endpoint. More information can be found [here](Identity and Access Management in Amazon OpenSearch Service).  
+4. Ensure the SaeMaker Studio Execution role can access your OpenSearch Service endpoint. More information can be found in [Identity and Access Management in Amazon OpenSearch Service](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ac.html?icmpid=docs_console_unmapped).  
 ```
 {
   "Version": "2012-10-17",
