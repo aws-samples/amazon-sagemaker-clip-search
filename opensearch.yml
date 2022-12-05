@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: OpenSearchDomain resource
+Parameters:
+  DomainName:
+    Description: User defined OpenSearch Domain name
+    Type: String
+  OpenSearchInstanceType:
+    Description: Instance type of the opensearch domain
+    Type: String
+    Default: 't3.small.search'
+  SageMakerStudioExecutionRoleArn:
+    Description: SageMaker Studio Execution Role ARN
+    Type: String
+Resources:
+  OpensearchDomain:
+    Type: 'AWS::OpenSearchService::Domain'
+    Properties:
+      DomainName:
+        Ref: DomainName
+      EngineVersion: 'OpenSearch_1.3'
+      ClusterConfig:
+        InstanceCount: '1'
+        InstanceType:
+          Ref: OpenSearchInstanceType
+      EBSOptions:
+        EBSEnabled: 'true'
+        Iops: 0
+        VolumeSize: 10
+        VolumeType: gp2
+      SnapshotOptions:
+        AutomatedSnapshotStartHour: '0'
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+          - Effect: Allow
+            Principal:
+              AWS: !Sub '${SageMakerStudioExecutionRoleArn}'
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+      AdvancedOptions:
+        rest.action.multi.allow_explicit_index: 'true'
+      Tags:
+        - Key: Name
+          Value: 
+            Ref: DomainName
+
+Outputs:
+  DomainArn:
+    Value:
+      'Fn::GetAtt':
+        - OpensearchDomain
+        - DomainArn
+  DomainEndpoint:
+    Value:
+      'Fn::GetAtt':
+        - OpensearchDomain
+        - DomainEndpoint

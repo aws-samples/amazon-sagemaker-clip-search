@@ -1,0 +1,259 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: OpenSearchDomain resource
+Parameters:
+  DomainName:
+    Description: User defined OpenSearch Domain name
+    Type: String
+    Default: 'clip-domain'
+  OpenSearchInstanceType:
+    Description: Instance type of the opensearch domain
+    Type: String
+    Default: 't3.small.search'
+Resources:
+  OpensearchDomain:
+    Type: 'AWS::OpenSearchService::Domain'
+    Properties:
+      DomainName:
+        Ref: DomainName
+      EngineVersion: 'OpenSearch_1.3'
+      ClusterConfig:
+        InstanceCount: '1'
+        InstanceType:
+          Ref: OpenSearchInstanceType
+      EBSOptions:
+        EBSEnabled: 'true'
+        Iops: 0
+        VolumeSize: 10
+        VolumeType: gp2
+      SnapshotOptions:
+        AutomatedSnapshotStartHour: '0'
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt SageMakerExecutionRole.Arn
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+      AdvancedOptions:
+        rest.action.multi.allow_explicit_index: 'true'
+      Tags:
+        - Key: Name
+          Value: 
+            Ref: DomainName
+
+  #================================================================================
+  # IAM ROLES
+  #================================================================================
+  SageMakerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: s3-access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource: arn:aws:s3:::*
+        - PolicyName: iam-access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:GetRolePolicy
+                Resource: '*'
+        - PolicyName: opensearch-access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - es:ESHttpDelete
+                  - es:ESHttpGet
+                  - es:ESHttpHead
+                  - es:ESHttpPost
+                  - es:ESHttpPut
+                Resource: '*'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LambdaExecutionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: CloudWatchLogsPermissions
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: !Sub arn:${AWS::Partition}:logs:*:*:*
+          - Sid: SageMakerDomainPermission
+            Effect: Allow
+            Action:
+              - sagemaker:ListDomains
+              - sagemaker:CreateDomain
+              - sagemaker:DescribeDomain
+              - sagemaker:DeleteDomain
+              - sagemaker:UpdateDomain
+              - sagemaker:ListUserProfiles
+              - sagemaker:CreateUserProfile
+              - sagemaker:UpdateUserProfile
+              - sagemaker:DeleteUserProfile
+              - sagemaker:DescribeUserProfile
+              - sagemaker:ListApps
+              - sagemaker:CreateApp
+              - sagemaker:DescribeApp
+              - sagemaker:DeleteApp
+              - sagemaker:UpdateApp
+            Resource:
+              - !Sub arn:${AWS::Partition}:sagemaker:*:*:domain/*
+              - !Sub arn:${AWS::Partition}:sagemaker:*:*:user-profile/*
+              - !Sub arn:${AWS::Partition}:sagemaker:*:*:app/*
+          - Sid: SageMakerProjectsPermission
+            Effect: Allow
+            Action:
+              - servicecatalog:AcceptPortfolioShare
+              - sagemaker:EnableSagemakerServicecatalogPortfolio
+              - sagemaker:DisableSagemakerServicecatalogPortfolio
+            Resource: '*'
+          - Sid: ServiceCatalogPermission
+            Effect: Allow
+            Action:
+              - servicecatalog:*
+            Resource: '*'
+          - Sid: SageMakerExecPassRole
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !GetAtt  SageMakerExecutionRole.Arn
+      Roles:
+        - !Ref  LambdaExecutionRole
+
+  #================================================================================
+  # STUDIO DOMAIN
+  #================================================================================
+  DefaultVpcLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: CFGetDefaultVpcId
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import cfnresponse
+          ec2 = boto3.client('ec2')
+          def lambda_handler(event, context):
+              if 'RequestType' in event and event['RequestType'] == 'Create':
+                  vpc_id = get_default_vpc_id()
+                  subnets =  get_subnets_for_vpc(vpc_id)
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {'VpcId': vpc_id , "Subnets" : subnets}, '')
+              else:
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {},'')
+          def get_default_vpc_id():
+              vpcs = ec2.describe_vpcs(Filters=[{'Name': 'is-default', 'Values': ['true']}])
+              vpcs = vpcs['Vpcs']
+              vpc_id = vpcs[0]['VpcId']
+              return vpc_id
+          def get_subnets_for_vpc(vpcId):
+              response = ec2.describe_subnets(
+                  Filters=[
+                      {
+                          'Name': 'vpc-id',
+                          'Values': [vpcId]
+                      }
+                  ]
+              )
+              subnet_ids = []
+              for subnet in response['Subnets']:
+                  subnet_ids.append(subnet['SubnetId'])
+              return subnet_ids
+      Description: Return default VPC ID and Subnets
+      Handler: index.lambda_handler
+      MemorySize: 512
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.7
+      Timeout: 5
+  DefaultVpcFinder:
+    Type: Custom::ResourceForFindingDefaultVpc
+    Properties:
+      ServiceToken: !GetAtt DefaultVpcLambda.Arn
+
+  StudioDomain:
+    Type: AWS::SageMaker::Domain
+    Properties:
+      AppNetworkAccessType: PublicInternetOnly
+      AuthMode: IAM
+      DefaultUserSettings:
+        ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+      DomainName: studio-domain
+      SubnetIds: !GetAtt DefaultVpcFinder.Subnets
+      VpcId: !GetAtt DefaultVpcFinder.VpcId
+
+  StudioUser:
+    Type: AWS::SageMaker::UserProfile
+    Properties: 
+      DomainId: !GetAtt StudioDomain.DomainId
+      UserProfileName: clip-user
+
+Outputs:
+  DomainArn:
+    Value:
+      'Fn::GetAtt':
+        - OpensearchDomain
+        - DomainArn
+  DomainEndpoint:
+    Value:
+      'Fn::GetAtt':
+        - OpensearchDomain
+        - DomainEndpoint
+  SageMakerExecutionRoleArn:
+    Value:
+      'Fn::GetAtt':
+        - SageMakerExecutionRole
+        - Arn
