@@ -75,7 +75,7 @@ The [Amazon Berkeley Objects Dataset](https://registry.opendata.aws/amazon-berke
 
 ## Running Costs
 
-This section outlines cost considerations for running this demo. Completing the POC will deploy a OpenSearch Cluster and a SageMaker Studio which will cost less than $1 per hour. Noted: the price listed below is calculated using us-east-1 region. The cost varies from region to region. And the cost may change over time as well (the price here is recorded 2022-11-22). 
+This section outlines cost considerations for running this demo. Completing the POC will deploy a OpenSearch Cluster and a SageMaker Studio which will cost less than $2 per hour. Noted: the price listed below is calculated using us-east-1 region. The cost varies from region to region. And the cost may change over time as well (the price here is recorded 2022-11-22). 
 
 Further cost breakdowns are below.
 
